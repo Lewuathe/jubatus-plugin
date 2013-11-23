@@ -1,48 +1,125 @@
-import java.util.List;
+package com.lewuathe.plugins.jenkinsjubatus;
 
+import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
+
+import us.jubat.classifier.ClassifierClient;
+import us.jubat.classifier.EstimateResult;
+import us.jubat.classifier.LabeledDatum;
 import us.jubat.common.Datum;
-import us.jubat.recommender.IdWithScore;
-import us.jubat.recommender.RecommenderClient;
 
 public class JubatusClient {
-	public static final String HOST = "127.0.0.1";
-	public static final int PORT = 9199;
-	public static final String NAME = "";
+    private final ClassifierClient client;
+    private final Random random;
 
-	public JubatusClient(String host, int port, String name) {
+    public JubatusClient(String hostname, int port, String name) throws Exception {
+		System.out.println("XXXXXXXXXXXXX JubatusClient XXXXXXXXXXXX");
+		try {
+			this.client = new ClassifierClient(hostname, port, name, 1);
+			this.random = new Random(0);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+		} 
+    }
+
+    /**
+     * Helper function for making Datum object.
+     *
+     * @param name
+     * @return
+     */
+    private static Datum makeDatum(String name) {
+        return new Datum().addString("name", name);
+    }
+
+    private static LabeledDatum makeTrain(String tag, String name) {
+        return new LabeledDatum(tag, makeDatum(name));
+    }
+
+    public void train(String tag, String data) {
+		LabeledDatum[] trainData = {
+			makeTrain(tag, data)
+		};
 		
-	}
+		/*
+        LabeledDatum[] trainData = {
+			makeTrain("徳川", "家康"),
+			makeTrain("徳川", "秀忠"),
+			makeTrain("徳川", "家光"),
+			makeTrain("徳川", "家綱"),
+			makeTrain("徳川", "綱吉"),
+			makeTrain("徳川", "家宣"),
+			makeTrain("徳川", "家継"),
+			makeTrain("徳川", "吉宗"),
+			makeTrain("徳川", "家重"),
+			makeTrain("徳川", "家治"),
+			makeTrain("徳川", "家斉"),
+			makeTrain("徳川", "家慶"),
+			makeTrain("徳川", "家定"),
+			makeTrain("徳川", "家茂"),
+			// makeTrain("徳川", "慶喜"),
 
-	public void start() throws Exception {
-		RecommenderClient r = new RecommenderClient(HOST, PORT, NAME, 5);
-		Datum d;
+			makeTrain("足利", "尊氏"), makeTrain("足利", "義詮"),
+			makeTrain("足利", "義満"),
+			makeTrain("足利", "義持"),
+			makeTrain("足利", "義量"),
+			makeTrain("足利", "義教"),
+			makeTrain("足利", "義勝"),
+			makeTrain("足利", "義政"),
+			makeTrain("足利", "義尚"),
+			makeTrain("足利", "義稙"),
+			makeTrain("足利", "義澄"),
+			makeTrain("足利", "義稙"),
+			makeTrain("足利", "義晴"),
+			makeTrain("足利", "義輝"),
+			makeTrain("足利", "義栄"),
+			// makeTrain("足利", "義昭"),
 
-		// user01
-		d = new Datum().addNumber("movie_A", 5).addNumber("movie_B", 2)
-			.addNumber("movie_C", 3);
-		r.updateRow("user01", d);
+			makeTrain("北条", "時政"), makeTrain("北条", "義時"),
+			makeTrain("北条", "泰時"), makeTrain("北条", "経時"),
+			makeTrain("北条", "時頼"), makeTrain("北条", "長時"),
+			makeTrain("北条", "政村"), makeTrain("北条", "時宗"),
+			makeTrain("北条", "貞時"), makeTrain("北条", "師時"),
+			makeTrain("北条", "宗宣"), makeTrain("北条", "煕時"),
+			makeTrain("北条", "基時"), makeTrain("北条", "高時"),
+			makeTrain("北条", "貞顕"),
+			// makeTrain("北条", "守時"),
+        };
+		*/
+        // prepare training data
+        // predict the last ones (that are commented out)
+        List<LabeledDatum> t = new ArrayList<LabeledDatum>(Arrays.asList(trainData));
+        Collections.shuffle(t, random);
 
-		// user02
-		d = new Datum().addNumber("movie_A", 2).addNumber("movie_B", 5)
-			.addNumber("movie_C", 1);
-		r.updateRow("user02", d);
+        // run train
+        client.train(t);
+    }
 
-		// user03
-		d = new Datum().addNumber("movie_A", 5).addNumber("movie_B", 1)
-			.addNumber("movie_C", 4);
-		r.updateRow("user03", d);
+    private static EstimateResult findBestResult(List<EstimateResult> res) {
+        EstimateResult best = null;
+        for (EstimateResult r : res) {
+            if (best == null || best.score < r.score) {
+                best = r;
+            }
+        }
+        return best;
+    }
 
-		List<String> rows = r.getAllRows();
-		for (String id : rows) {
-			List<IdWithScore> result;
-			result = r.similarRowFromId(id, 3);
-			System.out.println(id + " is similar to: ");
-			System.out.print("  ");
-			for (IdWithScore tuple : result) {
-				System.out.print(tuple.id + " (" + tuple.score + "), ");
-			}
-			System.out.println();
-		}
-	}
+    public void predict(String d) {
+        // predict the last shogun
+		//        Datum[] data = { makeDatum("慶喜"), makeDatum("義昭"), makeDatum("守時"), };
+		Datum[] data = { 
+			makeDatum(d)
+		};
+        for (Datum datum : data) {
+            List<List<EstimateResult>> res = client.classify(Arrays.asList(datum));
+            // get the predicted shogun name
+            System.out.println(findBestResult(res.get(0)).label + "->" + datum.stringValues.get(0).value);
+        }
+    }
 }
-
