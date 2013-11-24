@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.Map;
 
 import us.jubat.classifier.ClassifierClient;
 import us.jubat.classifier.EstimateResult;
@@ -17,7 +18,6 @@ public class JubatusClient {
     private final Random random;
 
     public JubatusClient(String hostname, int port, String name) throws Exception {
-		System.out.println("XXXXXXXXXXXXX JubatusClient XXXXXXXXXXXX");
 		try {
 			this.client = new ClassifierClient(hostname, port, name, 1);
 			this.random = new Random(0);
@@ -33,64 +33,24 @@ public class JubatusClient {
      * @param name
      * @return
      */
-    private static Datum makeDatum(String name) {
-        return new Datum().addString("name", name);
+    private static Datum makeDatum(Map<String, String> data) {
+		Datum d = new Datum();
+		for (Map.Entry<String, String> e : data.entrySet()) {
+			d.addString(e.getKey(), e.getValue());
+			System.out.println("key=" + e.getKey() + ", value=" + e.getValue());
+		}
+		return d;
     }
 
-    private static LabeledDatum makeTrain(String tag, String name) {
-        return new LabeledDatum(tag, makeDatum(name));
+    private static LabeledDatum makeTrain(String label, Map<String, String> data) {
+        return new LabeledDatum(label, makeDatum(data));
     }
 
-    public void train(String tag, String data) {
+    public void train(String label, Map data) {
 		LabeledDatum[] trainData = {
-			makeTrain(tag, data)
+			makeTrain(label, data)
 		};
-		
-		/*
-        LabeledDatum[] trainData = {
-			makeTrain("徳川", "家康"),
-			makeTrain("徳川", "秀忠"),
-			makeTrain("徳川", "家光"),
-			makeTrain("徳川", "家綱"),
-			makeTrain("徳川", "綱吉"),
-			makeTrain("徳川", "家宣"),
-			makeTrain("徳川", "家継"),
-			makeTrain("徳川", "吉宗"),
-			makeTrain("徳川", "家重"),
-			makeTrain("徳川", "家治"),
-			makeTrain("徳川", "家斉"),
-			makeTrain("徳川", "家慶"),
-			makeTrain("徳川", "家定"),
-			makeTrain("徳川", "家茂"),
-			// makeTrain("徳川", "慶喜"),
 
-			makeTrain("足利", "尊氏"), makeTrain("足利", "義詮"),
-			makeTrain("足利", "義満"),
-			makeTrain("足利", "義持"),
-			makeTrain("足利", "義量"),
-			makeTrain("足利", "義教"),
-			makeTrain("足利", "義勝"),
-			makeTrain("足利", "義政"),
-			makeTrain("足利", "義尚"),
-			makeTrain("足利", "義稙"),
-			makeTrain("足利", "義澄"),
-			makeTrain("足利", "義稙"),
-			makeTrain("足利", "義晴"),
-			makeTrain("足利", "義輝"),
-			makeTrain("足利", "義栄"),
-			// makeTrain("足利", "義昭"),
-
-			makeTrain("北条", "時政"), makeTrain("北条", "義時"),
-			makeTrain("北条", "泰時"), makeTrain("北条", "経時"),
-			makeTrain("北条", "時頼"), makeTrain("北条", "長時"),
-			makeTrain("北条", "政村"), makeTrain("北条", "時宗"),
-			makeTrain("北条", "貞時"), makeTrain("北条", "師時"),
-			makeTrain("北条", "宗宣"), makeTrain("北条", "煕時"),
-			makeTrain("北条", "基時"), makeTrain("北条", "高時"),
-			makeTrain("北条", "貞顕"),
-			// makeTrain("北条", "守時"),
-        };
-		*/
         // prepare training data
         // predict the last ones (that are commented out)
         List<LabeledDatum> t = new ArrayList<LabeledDatum>(Arrays.asList(trainData));
@@ -110,7 +70,7 @@ public class JubatusClient {
         return best;
     }
 
-    public void predict(String d) {
+    public void predict(Map d) {
         // predict the last shogun
 		//        Datum[] data = { makeDatum("慶喜"), makeDatum("義昭"), makeDatum("守時"), };
 		Datum[] data = { 

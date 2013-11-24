@@ -15,4 +15,7 @@
   <f:entry title="Jubatu port number" field="jubaPort">
     <f:textbox />
   </f:entry>
+  <f:entry title="Jubatu instance name" field="jubaName">
+    <f:textbox />
+  </f:entry>
 </j:jelly>
